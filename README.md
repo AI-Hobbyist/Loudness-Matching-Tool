@@ -50,6 +50,17 @@ python gui.py
    - Supported sample rates for export: `32000Hz`, `44100Hz`, `48000Hz`
    - Supported bit depths for export: `16bit`, `24bit`, `32 bit float`
 
+3. Since format conversion is implemented using ffmpeg, some format export processes may be slower. The specific implementation methods are as follows:
+
+   - Import wav format -> match volume -> export wav format
+   - Import wav format -> match volume -> export wav format first -> then call ffmpeg to export mp3 or flac format
+   - Import mp3 or flac format -> match volume -> export wav format
+   - Import mp3 or flac format -> match volume -> export wav format first -> then call ffmpeg to export mp3 or flac format
+
+   > [!NOTE]
+   >
+   > Therefore, it is recommended to use wav for both import and export formats here, which will greatly speed up processing time!
+
 ## Known Issues
 
 **Pull requests are welcome if anyone can solve these issues!**
