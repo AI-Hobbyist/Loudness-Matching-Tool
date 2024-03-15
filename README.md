@@ -57,9 +57,9 @@ python gui.py
    - Import mp3 or flac format -> match volume -> export wav format
    - Import mp3 or flac format -> match volume -> export wav format first -> then call ffmpeg to export mp3 or flac format
 
-   > [!NOTE]
-   >
-   > Therefore, it is recommended to use wav for both import and export formats here, which will greatly speed up processing time!
+> [!NOTE]
+>
+> Therefore, it is recommended to use wav for both import and export formats here, which will greatly speed up processing time!
 
 ## Known Issues
 
