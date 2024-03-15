@@ -1,55 +1,60 @@
+<div align="center">
+
 # Loudness Matching Tool
 
-基于 PyQt5 写的一个音频响度匹配小工具，目前支持 ITU-R BS.1770 (LUFS), 平均响度 (dBFS), 最大峰值 (dBFS), 总计 RMS (dB), 四种匹配方式。
+[English](./README.md) | [简体中文](./README_zh_CN.md)
 
-## 安装发行版
+</div>
 
-你可以直接前往 [releases](https://github.com/SUC-DriverOld/Loudness-Matching-Tool/releases) 下载安装程序或解压直用版。
+A small audio loudness matching tool written with PyQt5, currently supporting ITU-R BS.1770 (LUFS), average loudness (dBFS), maximum peak (dBFS), total RMS (dB), four matching modes.
 
-## 从源码启动
+## Installation from Releases
 
-1. 克隆本仓库
+You can directly go to [releases](https://github.com/SUC-DriverOld/Loudness-Matching-Tool/releases) to download the installer or the portable version.
+
+## Running from Source
+
+1. Clone this repository
 
 ```bash
 git clone https://github.com/SUC-DriverOld/Loudness-Matching-Tool.git
 ```
 
-2. 安装依赖
+2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. 下载 [ffmpeg](https://ffmpeg.org/) 并将 `ffmpeg.exe` 放置到 `./ffmpeg` 目录下
+3. Download [ffmpeg](https://ffmpeg.org/) and place `ffmpeg.exe` in the `./ffmpeg` directory
 
-4. 使用 `gui.py` 启动
+4. Launch using `gui.py`
 
 ```bash
 python gui.py
 ```
 
-## 一些说明
+## Notes
 
-1. 目前支持的响度匹配有以下四种：
+1. Currently supported loudness matching methods include:
 
    - ITU-R BS.1770 (LUFS)
-   - 平均响度 (dBFS)
-   - 最大峰值 (dBFS)【不是最大 **实际** 峰值！】
-   - 总计 RMS (dB)
+   - Average loudness (dBFS)
+   - Maximum peak (dBFS) [**NOT** the True Peak!]
+   - Total RMS (dB)
 
-2. 导出格式支持：
+2. Export formats support:
 
-   - 支持的导出音频格式：`wav`, `mp3`, `flac`
-   - 支持设置导出 mp3 比特率：`320k`, `256k`, `192k`, `128k`
-   - 支持设置导出采样率：`32000Hz`, `44100Hz`, `48000Hz`
-   - 支持设置导出位深度：`16bit`, `24bit`, `32 bit float`
+   - Supported export audio formats: `wav`, `mp3`, `flac`
+   - Supported mp3 bitrate settings: `320k`, `256k`, `192k`, `128k`
+   - Supported sample rates for export: `32000Hz`, `44100Hz`, `48000Hz`
+   - Supported bit depths for export: `16bit`, `24bit`, `32 bit float`
 
-## 存在的问题
+## Known Issues
 
-**如果有佬能解决这些问题的话，欢迎提出 pull request，感激不尽！**
+**Pull requests are welcome if anyone can solve these issues!**
 
-1. 因为 pydub 的导出无法指定 ffmpeg 路径并且打包出来的程序在运行时会有控制台窗口闪烁，所以当转换为其他格式时，采用的方法是先保存为 wav 格式，再调用 ffmpeg 进行格式转换。导出操作的部分代码如下。也有可能是我太菜了，轻喷。详情请见 [audio_processor.py#L35](https://github.com/SUC-DriverOld/Loudness-Matching-Tool/blob/main/audio_processor.py#L35)
-
-2. pydub 只能计算 peak，无法计算 true peak，所以只能匹配最大峰值，实际最大峰值没法匹配。详情请见 [audio_processor.py#L96](https://github.com/SUC-DriverOld/Loudness-Matching-Tool/blob/main/audio_processor.py#L96)
-
-3. 在实际测试中，部分电脑出现了控制台闪烁的情况。**但大部分情况下不会出现这个问题。**我暂时无法复现这个问题，所以暂时无法解决。
+1. Due to pydub's inability to specify the ffmpeg path for export and the flashing console window when running the packaged program, the method used for format conversion when exporting to other formats is to first save as WAV format and then call ffmpeg for format conversion. Part of the code for the export operation is as follows. It may also be because I'm not skilled enough, so please bear with me. Details can be found at [audio_processor.py#L35](https://github.com/SUC-DriverOld/Loudness-Matching-Tool/blob/main/audio_processor.py#L35)
+2. Pydub can only calculate peak, unable to calculate true peak, so it can only match the maximum peak, unable to match the actual maximum peak. Details can be found at [audio_processor.py#L96](https://github.com/SUC-DriverOld/Loudness-Matching-Tool/blob/main/audio_processor.py#L96)
+3. In actual testing, some computers experienced flashing console windows. **However, this problem does not occur in most cases.** I am currently unable to reproduce this issue, so I cannot solve it temporarily.
+4. There is a chance that when exporting with the selected bit depth `24bit`, it may not export at the specified bit depth.
