@@ -164,13 +164,13 @@ def process_audio(input_dir, output_dir, target_loudness, loudness_type="LUFS", 
     shutil.rmtree(temp_dir)
 
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Audio processing API")
     parser.add_argument("-i", "--input_dir", type=str, required=True,
                         help="Input directory containing audio files")
     parser.add_argument("-o", "--output_dir", type=str, required=True,
                         help="Output directory to save processed audio files")
-    parser.add_argument("target_loudness", type=float,
+    parser.add_argument("-target", "--target_loudness", type=float,
                         default=-23, help="Target loudness  (default: -23)")
     parser.add_argument("-type", "--loudness_type", type=str, default="LUFS", choices=["LUFS", "dBFS", "Peak_dBFS", "RMSdB"],
                         help="Type of loudness to match (default: LUFS)")
@@ -189,8 +189,16 @@ def main():
         args.input_dir, args.output_dir, args.target_loudness, args.loudness_type, args.export_format, args.mp3_bitrate, args.ffmpeg_sample_rate, args.ffmpeg_bit_depth
     ))
 
-    with open('config.json', 'r') as config_file:
-        config = json.load(config_file)
+    try:
+        with open('config.json', 'r') as config_file:
+            config = json.load(config_file)
+    except FileNotFoundError:
+        config = {
+            "export_format": "wav",
+            "mp3_bitrate": 320,
+            "ffmpeg_sample_rate": 48000,
+            "ffmpeg_bit_depth": 32
+        }
 
     config["export_format"] = args.export_format
     config["mp3_bitrate"] = args.mp3_bitrate
@@ -211,7 +219,3 @@ def main():
 
     process_audio(args.input_dir, args.output_dir,
                   args.target_loudness, loudness_type)
-
-
-if __name__ == "__main__":
-    main()

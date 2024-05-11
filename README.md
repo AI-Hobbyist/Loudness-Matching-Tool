@@ -41,7 +41,7 @@ Use `audio_processor.py`：
 ```bash
     "-i", "--input_dir", Input directory containing audio files
     "-o", "--output_dir", Output directory to save processed audio files
-    "target_loudness", default=-23, Target loudness
+    "-target", "--target_loudness", default=-23, Target loudness
     "-type", "--loudness_type", default="LUFS", choices=["LUFS", "dBFS", "Peak_dBFS", "RMSdB"], Type of loudness to match
     "--export_format", default="wav", choices=["wav", "flac", "mp3"], Audio export format
     "--mp3_bitrate", default=320, choices=[128, 192, 256, 320], MP3 bitrate in kbps
@@ -53,7 +53,7 @@ Use `audio_processor.py`：
 Example:
 
 ```bash
-python audio_processor.py -i input -o output -23 -type LUFS -export_format mp3 -mp3_bitrate 320
+python audio_processor.py -i input -o output -target -23 -type LUFS --export_format mp3 --mp3_bitrate 320
 ```
 
 ## Notes
