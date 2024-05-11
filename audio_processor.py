@@ -5,6 +5,7 @@ from pydub import AudioSegment
 import pyloudnorm
 import numpy as np
 import json
+import argparse
 
 FFMPEG = './ffmpeg/ffmpeg.exe'
 
@@ -161,3 +162,56 @@ def process_audio(input_dir, output_dir, target_loudness, loudness_type="LUFS", 
             progress_callback(int((i + 1) / len(audio_files) * 100))
 
     shutil.rmtree(temp_dir)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Audio processing API")
+    parser.add_argument("-i", "--input_dir", type=str, required=True,
+                        help="Input directory containing audio files")
+    parser.add_argument("-o", "--output_dir", type=str, required=True,
+                        help="Output directory to save processed audio files")
+    parser.add_argument("target_loudness", type=float,
+                        default=-23, help="Target loudness  (default: -23)")
+    parser.add_argument("-type", "--loudness_type", type=str, default="LUFS", choices=["LUFS", "dBFS", "Peak_dBFS", "RMSdB"],
+                        help="Type of loudness to match (default: LUFS)")
+    parser.add_argument("--export_format", type=str, default="wav", choices=["wav", "flac", "mp3"],
+                        help="Audio export format (default: wav)")
+    parser.add_argument("--mp3_bitrate", type=int, default=320, choices=[128, 192, 256, 320],
+                        help="MP3 bitrate in kbps (default: 320)")
+    parser.add_argument("--ffmpeg_sample_rate", type=int, default=48000, choices=[32000, 44100, 48000],
+                        help="Output audio sample rate (default: 48000)")
+    parser.add_argument("--ffmpeg_bit_depth", type=int, default=32, choices=[16, 24, 32],
+                        help="Output audio bit depth (default: 32)")
+
+    args = parser.parse_args()
+
+    print("Input directory:{}, Output directory:{}, Target loudness:{}, Loudness type:{}, Export format:{}, MP3 bitrate:{}, FFMPEG sample rate:{}, FFMPEG bit depth:{}".format(
+        args.input_dir, args.output_dir, args.target_loudness, args.loudness_type, args.export_format, args.mp3_bitrate, args.ffmpeg_sample_rate, args.ffmpeg_bit_depth
+    ))
+
+    with open('config.json', 'r') as config_file:
+        config = json.load(config_file)
+
+    config["export_format"] = args.export_format
+    config["mp3_bitrate"] = args.mp3_bitrate
+    config["ffmpeg_sample_rate"] = args.ffmpeg_sample_rate
+    config["ffmpeg_bit_depth"] = args.ffmpeg_bit_depth
+
+    with open('config.json', 'w') as config_file:
+        json.dump(config, config_file, indent=4)
+
+    if args.loudness_type == "LUFS":
+        loudness_type = "ITU-R BS.1770 (LUFS)"
+    elif args.loudness_type == "dBFS":
+        loudness_type = "平均响度 (dBFS)"
+    elif args.loudness_type == "Peak_dBFS":
+        loudness_type = "最大峰值 (dBFS)"
+    elif args.loudness_type == "RMSdB":
+        loudness_type = "总计 RMS (dB)"
+
+    process_audio(args.input_dir, args.output_dir,
+                  args.target_loudness, loudness_type)
+
+
+if __name__ == "__main__":
+    main()

@@ -82,6 +82,7 @@ class SettingsWindow(QDialog):
         self.setLayout(layout)
 
         self.setFixedWidth(200)
+        self.setFixedHeight(300)
 
     def load_config(self):
         try:
@@ -162,6 +163,7 @@ class MainWindow(QWidget):
 
         self.setLayout(layout)
         self.setFixedWidth(300)
+        self.setFixedHeight(350)
 
     def browse_input_dir(self):
         input_dir = QFileDialog.getExistingDirectory(

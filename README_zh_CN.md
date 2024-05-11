@@ -2,7 +2,7 @@
 
 # Loudness Matching Tool
 
-[English](./README.md) | [简体中文](./README_zh_CN.md)
+[English](./README.md) | 简体中文
 
 </div>
 
@@ -32,6 +32,28 @@ pip install -r requirements.txt
 
 ```bash
 python gui.py
+```
+
+## 使用命令行
+
+使用`audio_processor.py`：
+
+```bash
+    "-i", "--input_dir", Input directory containing audio files
+    "-o", "--output_dir", Output directory to save processed audio files
+    "target_loudness", default=-23, Target loudness
+    "-type", "--loudness_type", default="LUFS", choices=["LUFS", "dBFS", "Peak_dBFS", "RMSdB"], Type of loudness to match
+    "--export_format", default="wav", choices=["wav", "flac", "mp3"], Audio export format
+    "--mp3_bitrate", default=320, choices=[128, 192, 256, 320], MP3 bitrate in kbps
+    "--ffmpeg_sample_rate", default=48000, choices=[32000, 44100, 48000], Output audio sample rate
+    "--ffmpeg_bit_depth", default=32, choices=[16, 24, 32], Output audio bit depth
+
+```
+
+例如：
+
+```bash
+python audio_processor.py -i input -o output -23 -type LUFS -export_format mp3 -mp3_bitrate 320
 ```
 
 ## 一些说明
