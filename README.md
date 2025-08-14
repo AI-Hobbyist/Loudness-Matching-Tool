@@ -2,7 +2,7 @@
 
 # Loudness Matching Tool
 
-English | [简体中文](./README_zh_CN.md)
+English | [简体中文](./README_zh_CN.md) | [中文](./README_zh_TW.md)
 
 </div>
 

@@ -1,12 +1,57 @@
 import sys
 import json
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QFileDialog, QMessageBox, QProgressBar, QDialog, QComboBox
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QFileDialog, QMessageBox, QProgressBar, QDialog, QComboBox, QHBoxLayout
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QDoubleValidator
 from audio_processor import process_audio
 
-__version__ = "1.1"
+import json
+
+__version__ = "1.3"
+
+
+class LanguageManager:
+    def __init__(self):
+        self.current_language = "zh_HANS"
+        self.languages = {
+            "en": "English",
+            "zh_HANS": "简体中文",
+            "zh_HANT": "繁體中文"
+        }
+        self.translations = {}
+        self.load_all_languages()
+    
+    def load_all_languages(self):
+        """Load all language files"""
+        for lang_code in self.languages.keys():
+            try:
+                with open(f"lang/{lang_code}.json", "r", encoding="utf-8") as f:
+                    self.translations[lang_code] = json.load(f)
+            except FileNotFoundError:
+                print(f"Warning: Language file {lang_code}.json not found")
+                self.translations[lang_code] = {}
+    
+    def set_language(self, lang_code):
+        """Set the current language"""
+        if lang_code in self.languages:
+            self.current_language = lang_code
+            return True
+        return False
+    
+    def get_text(self, key, default=None):
+        """Get translated text for the given key"""
+        if default is None:
+            default = key
+        return self.translations.get(self.current_language, {}).get(key, default)
+    
+    def get_language_name(self, lang_code):
+        """Get the display name for a language code"""
+        return self.languages.get(lang_code, lang_code)
+
+
+# Global language manager instance
+lang_manager = LanguageManager()
 
 
 class Worker(QThread):
@@ -32,40 +77,40 @@ class Worker(QThread):
 class SettingsWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("输出设置")
         self.config = self.load_config()
         self.initUI()
+        self.update_language()
 
     def initUI(self):
         layout = QVBoxLayout()
 
-        self.export_format_label = QLabel("音频输出格式:")
+        self.export_format_label = QLabel("Audio Output Format:")
         self.export_format_combo = QComboBox()
         self.export_format_combo.addItems(["wav", "flac", "mp3"])
         self.export_format_combo.setCurrentText(self.config["export_format"])
 
-        self.bitrate_label = QLabel("输出MP3比特率(kbps):")
+        self.bitrate_label = QLabel("Output MP3 Bitrate (kbps):")
         self.bitrate_combo = QComboBox()
         self.bitrate_combo.addItems(["128", "192", "256", "320"])
         self.bitrate_combo.setCurrentText(str(self.config["mp3_bitrate"]))
 
-        self.ffmpeg_sample_rate_label = QLabel("输出音频采样率:")
+        self.ffmpeg_sample_rate_label = QLabel("Output Audio Sample Rate:")
         self.ffmpeg_sample_rate_combo = QComboBox()
         self.ffmpeg_sample_rate_combo.addItems(["32000", "44100", "48000"])
         self.ffmpeg_sample_rate_combo.setCurrentText(
             str(self.config["ffmpeg_sample_rate"]))
 
-        self.ffmpeg_bit_depth_label = QLabel("输出音频位深度:")
+        self.ffmpeg_bit_depth_label = QLabel("Output Audio Bit Depth:")
         self.ffmpeg_bit_depth_combo = QComboBox()
         self.ffmpeg_bit_depth_combo.addItems(["16", "24", "32"])
         self.ffmpeg_bit_depth_combo.setCurrentText(
             str(self.config["ffmpeg_bit_depth"]))
 
         self.setting_description_label = QLabel(
-            "<b>说明:</b><br>选择wav格式导出时, 若原始音频格式为wav, 则会保持原始采样率和位深度进行导出")
+            "<b>Note:</b><br>When exporting in wav format, if the original audio format is wav, the original sample rate and bit depth will be maintained during export")
         self.setting_description_label.setWordWrap(True)
 
-        self.save_button = QPushButton("保存")
+        self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_settings)
 
         layout.addWidget(self.export_format_label)
@@ -80,20 +125,34 @@ class SettingsWindow(QDialog):
         layout.addWidget(self.save_button)
 
         self.setLayout(layout)
-
-        self.setFixedWidth(200)
+        self.setFixedWidth(250)
         self.setFixedHeight(300)
+
+    def update_language(self):
+        """Update all text elements with current language"""
+        self.setWindowTitle(lang_manager.get_text("output_settings_window_title"))
+        self.export_format_label.setText(lang_manager.get_text("output_format_label"))
+        self.bitrate_label.setText(lang_manager.get_text("bitrate_label"))
+        self.ffmpeg_sample_rate_label.setText(lang_manager.get_text("ffmpeg_sample_rate_label"))
+        self.ffmpeg_bit_depth_label.setText(lang_manager.get_text("ffmpeg_bit_depth_label"))
+        self.setting_description_label.setText(lang_manager.get_text("setting_description_label"))
+        self.save_button.setText(lang_manager.get_text("save_button"))
 
     def load_config(self):
         try:
             with open("config.json", "r") as f:
-                return json.load(f)
+                config = json.load(f)
+                # Set language from config if available
+                if "language" in config:
+                    lang_manager.set_language(config["language"])
+                return config
         except FileNotFoundError:
             return {
                 "export_format": "mp3",
                 "mp3_bitrate": 192,
                 "ffmpeg_sample_rate": 44100,
-                "ffmpeg_bit_depth": 24
+                "ffmpeg_bit_depth": 24,
+                "language": "en"
             }
 
     def save_settings(self):
@@ -103,6 +162,7 @@ class SettingsWindow(QDialog):
             self.ffmpeg_sample_rate_combo.currentText())
         self.config["ffmpeg_bit_depth"] = int(
             self.ffmpeg_bit_depth_combo.currentText())
+        self.config["language"] = lang_manager.current_language
         with open("config.json", "w") as f:
             json.dump(self.config, f)
         self.accept()
@@ -111,38 +171,53 @@ class SettingsWindow(QDialog):
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("响度匹配小工具"+" v"+__version__)
         self.initUI()
+        self.update_language()
 
     def initUI(self):
         layout = QVBoxLayout()
 
-        self.input_dir_label = QLabel("选择音频输入文件夹:")
+        # Language selection
+        lang_layout = QHBoxLayout()
+        self.language_label = QLabel("Language:")
+        self.language_combo = QComboBox()
+        for lang_code, lang_name in lang_manager.languages.items():
+            self.language_combo.addItem(lang_name, lang_code)
+        # Set current language
+        current_index = self.language_combo.findData(lang_manager.current_language)
+        if current_index >= 0:
+            self.language_combo.setCurrentIndex(current_index)
+        self.language_combo.currentIndexChanged.connect(self.on_language_changed)
+        lang_layout.addWidget(self.language_label)
+        lang_layout.addWidget(self.language_combo)
+        layout.addLayout(lang_layout)
+
+        self.input_dir_label = QLabel("Select Audio Input Folder:")
         self.input_dir_lineEdit = QLineEdit()
-        self.input_dir_button = QPushButton("浏览")
+        self.input_dir_button = QPushButton("Browse")
         self.input_dir_button.clicked.connect(self.browse_input_dir)
 
-        self.output_dir_label = QLabel("选择音频输出文件夹:")
+        self.output_dir_label = QLabel("Select Audio Output Folder:")
         self.output_dir_lineEdit = QLineEdit()
-        self.output_dir_button = QPushButton("浏览")
+        self.output_dir_button = QPushButton("Browse")
         self.output_dir_button.clicked.connect(self.browse_output_dir)
 
-        self.loudness_type_label = QLabel("选择匹配方式:")
+        self.loudness_type_label = QLabel("Select Matching Method:")
         self.loudness_type_combo = QComboBox()
         self.loudness_type_combo.addItem("ITU-R BS.1770 (LUFS)")
-        self.loudness_type_combo.addItem("平均响度 (dBFS)")
-        self.loudness_type_combo.addItem("最大峰值 (dBFS)")
-        self.loudness_type_combo.addItem("总计 RMS (dB)")
+        self.loudness_type_combo.addItem("Average Loudness (dBFS)")
+        self.loudness_type_combo.addItem("Maximum Peak (dBFS)")
+        self.loudness_type_combo.addItem("Total RMS (dB)")
 
-        self.target_loudness_label = QLabel("目标响度数值:")
+        self.target_loudness_label = QLabel("Target Loudness Value:")
         self.target_loudness_lineEdit = QLineEdit()
         self.target_loudness_lineEdit.setValidator(QDoubleValidator())
         self.target_loudness_lineEdit.setText("-23")
 
-        self.process_button = QPushButton("开始处理")
+        self.process_button = QPushButton("Start Processing")
         self.process_button.clicked.connect(self.process)
 
-        self.settings_button = QPushButton("输出设置")
+        self.settings_button = QPushButton("Output Settings")
         self.settings_button.clicked.connect(self.open_settings)
 
         self.progress_bar = QProgressBar()
@@ -163,17 +238,45 @@ class MainWindow(QWidget):
 
         self.setLayout(layout)
         self.setFixedWidth(300)
-        self.setFixedHeight(350)
+        self.setFixedHeight(380)
+
+    def update_language(self):
+        """Update all text elements with current language"""
+        self.setWindowTitle(lang_manager.get_text("main_window_title") + " v" + __version__)
+        self.language_label.setText(lang_manager.get_text("language_label"))
+        self.input_dir_label.setText(lang_manager.get_text("input_dir_label"))
+        self.output_dir_label.setText(lang_manager.get_text("output_dir_label"))
+        self.input_dir_button.setText(lang_manager.get_text("browse_button"))
+        self.output_dir_button.setText(lang_manager.get_text("browse_button"))
+        self.loudness_type_label.setText(lang_manager.get_text("loudness_type_label"))
+        self.target_loudness_label.setText(lang_manager.get_text("target_loudness_label"))
+        self.process_button.setText(lang_manager.get_text("process_button"))
+        self.settings_button.setText(lang_manager.get_text("settings_button"))
+        
+        # Update combo box items
+        self.loudness_type_combo.clear()
+        self.loudness_type_combo.addItem(lang_manager.get_text("loudness_type_combo_item_1"))
+        self.loudness_type_combo.addItem(lang_manager.get_text("loudness_type_combo_item_2"))
+        self.loudness_type_combo.addItem(lang_manager.get_text("loudness_type_combo_item_3"))
+        self.loudness_type_combo.addItem(lang_manager.get_text("loudness_type_combo_item_4"))
+
+    def on_language_changed(self):
+        """Handle language change"""
+        current_index = self.language_combo.currentIndex()
+        if current_index >= 0:
+            lang_code = self.language_combo.itemData(current_index)
+            if lang_code and lang_manager.set_language(lang_code):
+                self.update_language()
 
     def browse_input_dir(self):
         input_dir = QFileDialog.getExistingDirectory(
-            self, "Select Input Directory")
+            self, lang_manager.get_text("select_input_dir"))
         if input_dir:
             self.input_dir_lineEdit.setText(input_dir)
 
     def browse_output_dir(self):
         output_dir = QFileDialog.getExistingDirectory(
-            self, "Select Output Directory")
+            self, lang_manager.get_text("select_output_dir"))
         if output_dir:
             self.output_dir_lineEdit.setText(output_dir)
 
@@ -181,17 +284,17 @@ class MainWindow(QWidget):
         input_dir = self.input_dir_lineEdit.text()
         output_dir = self.output_dir_lineEdit.text()
         if not input_dir or not output_dir:
-            QMessageBox.critical(self, "错误", "请选择文件夹目录!")
+            QMessageBox.critical(self, lang_manager.get_text("error"), lang_manager.get_text("error_message_1"))
             return
         if not os.path.exists(input_dir) or not os.path.exists(output_dir):
-            QMessageBox.critical(self, "错误", "请选择正确的文件夹目录!")
+            QMessageBox.critical(self, lang_manager.get_text("error"), lang_manager.get_text("error_message_2"))
             return
         if self.target_loudness_lineEdit.text() == "":
-            QMessageBox.critical(self, "错误", "请输入目标响度!")
+            QMessageBox.critical(self, lang_manager.get_text("error"), lang_manager.get_text("error_message_3"))
             return
         target_loudness = float(self.target_loudness_lineEdit.text())
         if target_loudness > 0 or target_loudness < -48:
-            QMessageBox.critical(self, "错误", "响度数值输入错误! 范围: -48~0")
+            QMessageBox.critical(self, lang_manager.get_text("error"), lang_manager.get_text("error_message_4"))
             return
         loudness_type = self.loudness_type_combo.currentText()
 
@@ -199,7 +302,7 @@ class MainWindow(QWidget):
                              target_loudness, loudness_type)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.finished.connect(
-            lambda: QMessageBox.information(self, "完成", "处理完成！"))
+            lambda: QMessageBox.information(self, "Complete", lang_manager.get_text("processing_completed")))
         self.worker.start()
 
     def open_settings(self):
